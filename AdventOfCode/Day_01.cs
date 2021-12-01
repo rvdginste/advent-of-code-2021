@@ -1,7 +1,6 @@
 ﻿using AoCHelper;
 
 using System.Globalization;
-using System.Linq;
 
 #pragma warning disable CA1707
 namespace AdventOfCode
