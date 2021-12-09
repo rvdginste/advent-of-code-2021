@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Globalization;
 using AoCHelper;
 
@@ -15,22 +14,13 @@ namespace AdventOfCode
             string[] lines = File.ReadAllLines(InputFilePath);
             _dimX = lines[0].Length + 2;
             _dimY = lines.Length + 2;
-
             _input = new int[_dimX, _dimY];
             for (int i = 0; i < _dimX; i++)
-            {
-                for (int j = 0; j < _dimY; j++)
-                {
-                    if (i == 0 || j == 0 || i == (_dimX - 1) || j == (_dimY - 1))
-                    {
-                        _input[i, j] = 9;
-                    }
-                    else
-                    {
-                        _input[i, j] = int.Parse(lines[j - 1][(i - 1)..i], NumberStyles.Integer);
-                    }
-                }
-            }
+            for (int j = 0; j < _dimY; j++)
+                _input[i, j] =
+                    i == 0 || j == 0 || i == (_dimX - 1) || j == (_dimY - 1)
+                        ? 9
+                        : int.Parse(lines[j - 1][(i - 1)..i], NumberStyles.Integer);
         }
 
         public override ValueTask<string> Solve_1()
@@ -38,22 +28,19 @@ namespace AdventOfCode
             int RiskForLowPoint(int x, int y)
             {
                 int val = _input[x, y];
-                bool low = _input[x - 1, y] > val;
-                low = low && _input[x + 1, y] > val;
-                low = low && _input[x, y - 1] > val;
-                low = low && _input[x, y + 1] > val;
-
-                return !low ? 0 : val + 1;
+                return
+                    _input[x - 1, y] > val
+                    && _input[x + 1, y] > val
+                    && _input[x, y - 1] > val
+                    && _input[x, y + 1] > val
+                        ? val + 1
+                        : 0;
             }
 
             int sum = 0;
             for (int i = 1; i < _dimX - 1; i++)
-            {
-                for (int j = 1; j < _dimY - 1; j++)
-                {
-                    sum += RiskForLowPoint(i, j);
-                }
-            }
+            for (int j = 1; j < _dimY - 1; j++)
+                sum += RiskForLowPoint(i, j);
 
             return new($"Sum risks = {sum}");
         }
@@ -70,8 +57,9 @@ namespace AdventOfCode
                 return low;
             }
 
-            IEnumerable<(int x, int y)> FindHigherNeighbours(int x, int y)
+            IEnumerable<(int x, int y)> FindHigherNeighbours((int x, int y) point)
             {
+                (int x, int y) = point;
                 int val = _input[x, y];
                 if (_input[x - 1, y] >= val && _input[x - 1, y] < 9) yield return (x: x - 1, y);
                 if (_input[x + 1, y] >= val && _input[x + 1, y] < 9) yield return (x: x + 1, y);
@@ -84,32 +72,18 @@ namespace AdventOfCode
                 HashSet<(int x, int y)> basinPoints = new() { lowPoint };
                 Stack<(int x, int y)> stack = new();
                 stack.Push(lowPoint);
-                while (stack.Count > 0)
-                {
-                    (int x, int y) = stack.Pop();
-                    foreach ((int x, int y) higherNeighbour in FindHigherNeighbours(x, y))
-                    {
-                        if (basinPoints.Add(higherNeighbour))
-                        {
-                            stack.Push(higherNeighbour);
-                        }
-                    }
-                }
+                while (stack.TryPop(out (int x, int y) point))
+                    foreach ((int x, int y) higherNeighbour in FindHigherNeighbours(point).Where(basinPoints.Add))
+                        stack.Push(higherNeighbour);
 
                 return basinPoints.Count;
             }
 
             List<(int x, int y)> lowPoints = new();
             for (int i = 1; i < _dimX - 1; i++)
-            {
                 for (int j = 1; j < _dimY - 1; j++)
-                {
                     if (IsLowPoint(i, j))
-                    {
                         lowPoints.Add((i, j));
-                    }
-                }
-            }
 
             int[] basins = lowPoints.Select(SizeOfBasin).OrderByDescending(x => x).ToArray();
             int multi = basins[0] * basins[1] * basins[2];
